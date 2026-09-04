@@ -171,10 +171,10 @@ export function Navigation() {
             </div>
 
             <nav
-              className="relative flex min-h-full flex-col justify-between overflow-y-auto edge-x pt-24 pb-8 sm:pt-28 sm:pb-10"
+              className="relative flex min-h-full flex-col justify-between overflow-y-auto edge-x pt-20 pb-6 sm:pt-24 sm:pb-8"
               onPointerLeave={() => setHovered(null)}
             >
-              <ul className="space-y-1 sm:space-y-2">
+              <ul className="space-y-0.5 sm:space-y-1">
                 {navItems.map((item, i) => (
                   <li key={item.label} className="overflow-hidden">
                     <motion.div
@@ -188,13 +188,13 @@ export function Navigation() {
                         onPointerEnter={() => setHovered(item.label)}
                         onFocus={() => setHovered(item.label)}
                         data-cursor="VIEW"
-                        className="group flex w-full items-baseline gap-4 py-1 text-left sm:gap-8"
+                        className="group flex w-full items-baseline gap-3 py-0.5 text-left sm:gap-6 sm:py-1"
                       >
-                        <span className="t-label w-8 shrink-0 text-dust transition-colors group-hover:text-oxide">
+                        <span className="t-label w-6 shrink-0 text-[0.7rem] text-dust transition-colors group-hover:text-oxide sm:w-8 sm:text-[0.78rem]">
                           {item.index}
                         </span>
                         <span
-                          className="t-display t-hang text-[clamp(2.8rem,11vw,9rem)] text-bone transition-[color,transform,-webkit-text-stroke] duration-500 group-hover:translate-x-3 motion-reduce:group-hover:translate-x-0"
+                          className="t-display t-hang text-[clamp(1.85rem,6.6vh,4.8rem)] leading-[0.92] text-bone transition-[color,transform,-webkit-text-stroke] duration-500 group-hover:translate-x-3 motion-reduce:group-hover:translate-x-0"
                           style={{
                             WebkitTextStroke:
                               hovered && hovered !== item.label
@@ -217,7 +217,7 @@ export function Navigation() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ delay: 0.55, duration: 0.6 }}
-                className="mt-12 flex flex-wrap items-end justify-between gap-6 border-t border-bone/10 pt-6"
+                className="mt-6 flex flex-wrap items-end justify-between gap-6 border-t border-bone/10 pt-4 sm:mt-8 sm:pt-6"
               >
                 <div className="t-meta leading-relaxed">
                   <p>{artist.name}</p>
