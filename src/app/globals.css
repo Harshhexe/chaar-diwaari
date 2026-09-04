@@ -1,26 +1,562 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ *
+ *  CHAAR DIWAARI — GLOBAL VISUAL SYSTEM
+ *  Near-black ground. Bone type. One oxide-red accent. Nothing else.
+ * ------------------------------------------------------------------ */
+
+@theme {
+  /* --- ground ------------------------------------------------------ */
+  --color-void: #050505;
+  --color-ink: #0a0a0a;
+  --color-slate: #131313;
+  --color-smoke: #1c1b1a;
+
+  /* --- type -------------------------------------------------------- */
+  --color-bone: #ede8e0;
+  --color-paper: #cfc9bf;
+  --color-ash: #7d7873;
+  --color-dust: #4a4744;
+
+  /* --- accent (used sparingly, never decoratively) ------------------ */
+  --color-oxide: #d7300f;
+  --color-oxide-deep: #7d1c09;
+  --color-acid: #d8ff2e;
+
+  /* --- type stacks -------------------------------------------------- */
+  --font-display: var(--font-anton), "Arial Narrow", sans-serif;
+  --font-body: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-jb), ui-monospace, "SF Mono", monospace;
+  --font-editorial: var(--font-editorial), "Times New Roman", serif;
+  --font-deva: var(--font-deva), var(--font-grotesk), sans-serif;
+
+  /* --- motion ------------------------------------------------------- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+  --ease-cinematic: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* ------------------------------------------------------------------ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --header-h: 4.5rem;
+  --player-h: 0px;
+  --edge: clamp(1rem, 3.2vw, 3.25rem);
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  min-width: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-void);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-void);
+  /* Set by the player once it appears, so the final slate is never covered. */
+  padding-bottom: var(--player-h, 0px);
+  color: var(--color-bone);
+  font-family: var(--font-body);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+/* Lenis owns the scroll; opt out cleanly when it is not mounted. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+::selection {
+  background: var(--color-oxide);
+  color: var(--color-bone);
+}
+
+/* Native scrollbar is hidden — PageProgress replaces it. */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+html {
+  scrollbar-width: none;
+}
+
+/* ------------------------------------------------------------------ *
+ *  FOCUS — visible, always. Aesthetics never win over keyboard use.
+ * ------------------------------------------------------------------ */
+
+:focus-visible {
+  outline: 2px solid var(--color-oxide);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 200;
+  translate: 0 -160%;
+  background: var(--color-bone);
+  color: var(--color-void);
+  padding: 0.6rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: translate 0.3s var(--ease-out-expo);
+}
+
+.skip-link:focus-visible {
+  translate: 0 0;
+}
+
+/* ------------------------------------------------------------------ *
+ *  TYPE PRIMITIVES
+ * ------------------------------------------------------------------ */
+
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.78;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.t-editorial {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.05;
+}
+
+.t-meta {
+  font-family: var(--font-mono);
+  font-size: clamp(0.6rem, 0.72vw, 0.72rem);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-ash);
+}
+
+.t-label {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* Optical hanging for giant display type */
+.t-hang {
+  margin-left: -0.035em;
+}
+
+/* ------------------------------------------------------------------ *
+ *  MASKS / REVEALS — the base state lives in CSS so there is never a
+ *  flash of un-animated content before GSAP hydrates.
+ * ------------------------------------------------------------------ */
+
+[data-reveal] {
+  will-change: transform, opacity;
+}
+
+/**
+ * The clipping box a split unit rises out of.
+ *
+ * Deliberately does NOT set `display`. This rule is unlayered, and Tailwind's
+ * utilities live inside the `utilities` cascade layer — an unlayered rule beats
+ * a layered one no matter the specificity or order, so a `display` here would
+ * silently override the `inline-block` / `block` that SplitText puts on each
+ * unit. That is what turned every split heading into one letter per line.
+ * The component always supplies a display; this rule only does the masking.
+ */
+.mask-line {
+  overflow: hidden;
+  padding-block: 0.06em;
+  margin-block: -0.06em;
+}
+
+/* ------------------------------------------------------------------ *
+ *  CURSOR — hidden natively only where our custom cursor is active
+ * ------------------------------------------------------------------ */
+
+html[data-custom-cursor="active"],
+html[data-custom-cursor="active"] *,
+html[data-cursor="custom"],
+html[data-cursor="custom"] * {
+  cursor: none !important;
+}
+
+/* ------------------------------------------------------------------ *
+ *  UTILITIES
+ * ------------------------------------------------------------------ */
+
+.edge-x {
+  padding-inline: var(--edge);
+}
+
+.hairline {
+  border-color: color-mix(in srgb, var(--color-bone) 12%, transparent);
+}
+
+.stroke-text {
+  -webkit-text-stroke: 1px color-mix(in srgb, var(--color-bone) 42%, transparent);
+  color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.tap-safe {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ------------------------------------------------------------------ *
+ *  REDUCED MOTION — every Level-2 / Level-3 sequence degrades to a
+ *  plain fade. Nothing pins, nothing scrubs, nothing parallaxes.
+ * ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.12s !important;
+    scroll-behavior: auto !important;
+  }
+
+  .grain-layer {
+    animation: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  ATMOSPHERE — film grain plate + scanline field (GrainOverlay)
+ *  The plate is oversized and stepped in 8 discrete positions rather
+ *  than smoothly animated: that is how real grain behaves, and it costs
+ *  one transform per step instead of a per-frame repaint.
+ * ------------------------------------------------------------------ */
+
+@keyframes grain-shift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  12.5% {
+    transform: translate3d(-6%, 3%, 0);
+  }
+
+  25% {
+    transform: translate3d(4%, -5%, 0);
+  }
+
+  37.5% {
+    transform: translate3d(-3%, -6%, 0);
+  }
+
+  50% {
+    transform: translate3d(6%, 2%, 0);
+  }
+
+  62.5% {
+    transform: translate3d(-5%, 5%, 0);
+  }
+
+  75% {
+    transform: translate3d(3%, -3%, 0);
+  }
+
+  87.5% {
+    transform: translate3d(-4%, 4%, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.grain-layer {
+  animation: grain-shift 0.8s steps(1) infinite;
+}
+
+.grain-layer-alt {
+  animation: grain-shift 0.45s steps(1) infinite reverse;
+}
+
+.scanlines {
+  background-image: repeating-linear-gradient(to bottom,
+      rgba(237, 232, 224, 0.08) 0px,
+      rgba(237, 232, 224, 0.08) 1px,
+      transparent 1px,
+      transparent 3px);
+}
+
+@keyframes vhs-sweep {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.35;
+  }
+  20% {
+    top: 110%;
+    opacity: 0;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+.vhs-glitch-line {
+  animation: vhs-sweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+html[data-distort="on"] .scanlines {
+  opacity: 0.65;
+}
+
+/* RGB split used only during transitions and album openings. */
+html[data-distort="on"] .distortable {
+  filter: url(#cd-rgb-split);
+}
+
+/* Chromatic separation: a transition moment, never a permanent state. */
+.scrub-plate {
+  transition: filter 0.18s linear;
+}
+
+.scrub-plate[data-split="on"] {
+  filter: url(#cd-rgb-split);
+}
+
+/* ------------------------------------------------------------------ *
+ *  GLITCH EFFECTS & CHROMATIC ABERRATION
+ * ------------------------------------------------------------------ */
+
+@keyframes glitch-skew {
+  0% {
+    transform: none;
+  }
+  20% {
+    transform: skew(-0.8deg);
+  }
+  21% {
+    transform: skew(1.2deg);
+  }
+  22% {
+    transform: none;
+  }
+  65% {
+    transform: none;
+  }
+  66% {
+    transform: skew(0.6deg);
+  }
+  67% {
+    transform: none;
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes glitch-rgb {
+  0% {
+    text-shadow: none;
+  }
+  15% {
+    text-shadow: -2px 0 rgba(215, 48, 15, 0.8), 2px 0 rgba(237, 232, 224, 0.6);
+  }
+  18% {
+    text-shadow: 2px 0 rgba(215, 48, 15, 0.9), -2px 0 rgba(237, 232, 224, 0.7);
+  }
+  22% {
+    text-shadow: none;
+  }
+  70% {
+    text-shadow: none;
+  }
+  72% {
+    text-shadow: -1.5px 0 rgba(215, 48, 15, 0.85);
+  }
+  74% {
+    text-shadow: none;
+  }
+  100% {
+    text-shadow: none;
+  }
+}
+
+.glitch-hover {
+  position: relative;
+  transition: transform 0.2s ease, text-shadow 0.2s ease;
+}
+
+.glitch-hover:hover {
+  animation: glitch-skew 1.8s steps(2) infinite, glitch-rgb 2.2s steps(2) infinite;
+  text-shadow: -2px 0 rgba(215, 48, 15, 0.85), 2px 0 rgba(237, 232, 224, 0.65);
+}
+
+.glitch-active {
+  animation: glitch-skew 2.5s steps(2) infinite, glitch-rgb 3s steps(2) infinite;
+}
+
+.glitch-border-hover {
+  transition: all 0.25s ease;
+}
+
+.glitch-border-hover:hover {
+  box-shadow: 0 0 16px rgba(215, 48, 15, 0.4), inset 0 0 8px rgba(215, 48, 15, 0.2);
+  border-color: var(--color-oxide);
+}
+
+/* ------------------------------------------------------------------ *
+ *  PLAYER — native range styled to match the rest of the interface
+ * ------------------------------------------------------------------ */
+
+.cd-range {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cd-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: color-mix(in srgb, var(--color-bone) 22%, transparent);
+}
+
+.cd-range::-moz-range-track {
+  height: 1px;
+  background: color-mix(in srgb, var(--color-bone) 22%, transparent);
+}
+
+.cd-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 9px;
+  height: 9px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--color-bone);
+}
+
+.cd-range::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-bone);
+}
+
+/* Hero scroll cue — a slow travelling tick, not a bouncing chevron. */
+@keyframes scroll-tick {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+
+.scroll-tick {
+  animation: scroll-tick 2.4s cubic-bezier(0.83, 0, 0.17, 1) infinite;
+}
+
+/* Timeline entry transitions — content arrives from the right, with depth. */
+@keyframes tl-in {
+  from {
+    opacity: 0;
+    transform: translate3d(26px, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes tl-plate {
+  from {
+    opacity: 0;
+    transform: translate3d(6%, 0, 0) scale(1.08);
+    clip-path: inset(0 0 0 22%);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Archive rows arrive in discrete steps — mechanical, not eased. */
+@keyframes ar-row {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 0, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Quotes arrive with a small rise and a settle — read, do not slam. */
+@keyframes words-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+    filter: blur(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  MODAL DIALOGS — Hide floating nav marks when any modal is open
+ * ------------------------------------------------------------------ */
+body:has([role="dialog"]:not(#cd-menu)) [data-nav-header] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
